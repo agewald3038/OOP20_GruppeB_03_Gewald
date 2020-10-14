@@ -8,7 +8,7 @@ using namespace std;
 
 struct transaction
 {
-    enum tr_enum {
+    enum tr_enum { //would also work with bool, but it's not as fancy
         einzahlen,
         auszahlen
     };
@@ -46,7 +46,7 @@ public:
         if (value<0)
         {
             cout << "Nur positive Zahlen bitte." << endl;
-            return;
+            value *= -1;
         }
         balance += value;
         log.insert(log.end(), transaction(transaction::einzahlen, value));
