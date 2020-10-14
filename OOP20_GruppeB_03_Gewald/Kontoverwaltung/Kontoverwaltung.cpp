@@ -1,20 +1,75 @@
-// Kontoverwaltung.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
-
 #include <iostream>
+#include<string>
+#include<vector>
+
+
+using namespace std;
+
+
+struct transaction
+{
+    enum tr_enum {
+        einzahlen,
+        auszahlen
+    };
+    tr_enum tr_type;
+    double value;
+    transaction(tr_enum c_type, double c_value) : tr_type(c_type), value(c_value)
+    {
+
+    }
+};
+
+class Konto
+{
+    string name;
+    double balance;
+    vector<transaction> log;
+public:
+    void kontoeroeffnung(string name, double balance = 0)
+    {
+        if (balance>=0)
+        {
+            this->name = name;
+            this->balance = balance;
+            cout << "Konto von " << name << " wurde eroeffnet." << endl;
+            log.insert(log.end(), transaction(transaction::einzahlen, balance));
+        }
+        else
+        {
+            cout << "Kein negativer Betrag bei Kontoeroeffnung!" << endl;
+        }
+    }
+
+    void einzahlen(double value)
+    {
+        if (value<0)
+        {
+            cout << "Nur positive Zahlen bitte." << endl;
+            return;
+        }
+        balance += value;
+        log.insert(log.end(), transaction(transaction::einzahlen, value));
+    }
+    void auszahlen(double value)
+    {
+        if (value<0)
+        {
+            value *= -1;
+        }
+        if (value > balance)
+        {
+            cout << "Nicht genug Geld am Konto!" << endl;
+            return;
+        }
+        balance -= value;
+        log.insert(log.end(), transaction(transaction::auszahlen, value));
+    }
+};
+
 
 int main()
 {
-    std::cout << "Hello World!\n";
+    Konto bla;
+    bla.kontoeroeffnung("Alexander", 50);
 }
-
-// Run program: Ctrl + F5 or Debug > Start Without Debugging menu
-// Debug program: F5 or Debug > Start Debugging menu
-
-// Tips for Getting Started: 
-//   1. Use the Solution Explorer window to add/manage files
-//   2. Use the Team Explorer window to connect to source control
-//   3. Use the Output window to see build output and other messages
-//   4. Use the Error List window to view errors
-//   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
-//   6. In the future, to open this project again, go to File > Open > Project and select the .sln file
