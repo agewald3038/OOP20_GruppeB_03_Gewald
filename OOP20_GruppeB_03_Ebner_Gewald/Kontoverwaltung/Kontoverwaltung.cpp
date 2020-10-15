@@ -2,6 +2,7 @@
 #include<string>
 #include<vector>
 #include <iomanip>
+#include<fstream>
 
 using namespace std;
 /* 
@@ -71,7 +72,7 @@ public:
 
     void kontoauszug() // prints all transactions to console, from newest to oldest
     {
-        cout << "Liste der Transaktionen:" << endl;
+        cout << "Liste der Transaktionen von " << name <<":" << endl;
         for (int i=(int)log.size() - 1; i>=0; i--)
         {
             if (log[i].tr_type==transaction::einzahlen)
@@ -84,8 +85,67 @@ public:
             }
         }
     }
+    //write the current Account to a file in the format it can also be read out again.
+    void writetofile(string file_name)
+    {
+        if (file_name.empty())
+        {
+            cout << "Name of File:" << endl;
+            getline(cin, file_name);
+        }
+        ofstream file;
+        file.open(file_name, ios_base::app);
+        file << name << endl << balance << endl;
+        for (int i = (int)log.size()-1; i > -1; i--)
+        {
+            if (log[i].tr_type==transaction::einzahlen)
+            {
+                file << setprecision(2) << fixed << log[i].value << endl;
+            }
+            else if (log[i].tr_type==transaction::auszahlen)
+            {
+                file << setprecision(2) << fixed << log[i].value * -1 << endl;
+            }
+        }
+    }
 };
 
+//As its own function, because this creates a new account --> can't use method of an object that doesn't exist yet
+Konto readfromfile(const char* file_name) //open a new account from file
+{
+    ifstream file(file_name);
+    if (file.is_open())
+    {
+        Konto temp;
+        string name; //temporary places for reading out of file
+        getline(file, name);
+        string balance;
+        getline(file, balance);
+        temp.kontoeroeffnung(name, atof(balance.c_str())); //initializing the values with the values given from the file.
+        string str;
+        double val;
+        while (getline(file, str))
+        {
+            val = atof(str.c_str());
+            if (val < 0)
+            {
+                val *= -1;
+                temp.abheben(val);
+            }
+            else
+            {
+                temp.einzahlen(val);
+            }
+        }
+        file.close();
+        return temp;
+    }
+    else
+    {
+        cout << "File could not be opened. Closing Programm." << endl;
+        exit(0);
+    }
+}
 
 int main()
 {
@@ -98,4 +158,8 @@ int main()
     alex.einzahlen(20);
     alex.abheben(10);
     alex.kontoauszug();
+    //Bonus:
+    alex.writetofile("test.txt");
+    Konto harry = readfromfile("test.txt");
+    harry.kontoauszug();
 }
