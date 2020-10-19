@@ -86,15 +86,15 @@ public:
         }
     }
     //write the current Account to a file in the format it can also be read out again.
-    void writetofile(string file_name)
+    void writetofile(string file_name=0) //every textfile is for one account
     {
-        if (file_name.empty())
+        if (file_name.empty()) //if no file_name was passed, read it in from console
         {
             cout << "Name of File:" << endl;
             getline(cin, file_name);
         }
         ofstream file;
-        file.open(file_name, ios_base::app);
+        file.open(file_name, ios_base::out);
         file << name << endl << balance << endl;
         for (int i = (int)log.size()-1; i > -1; i--)
         {
@@ -126,7 +126,7 @@ Konto readfromfile(const char* file_name) //open a new account from file
         double val;
         while (getline(file, str))
         {
-            val = atof(str.c_str());
+            val = atof(str.c_str()); //converting string value to float
             if (val < 0)
             {
                 val *= -1;
