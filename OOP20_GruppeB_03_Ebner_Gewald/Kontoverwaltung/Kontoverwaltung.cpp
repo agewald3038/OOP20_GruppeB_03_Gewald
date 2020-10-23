@@ -10,6 +10,8 @@ Authors: Sabine Ebner & Alexander Gewald
 Aufgabennummer 3.1
 */
 
+int id_count = 0;
+
 struct transaction
 {
     enum tr_enum { //would also work with bool, but it's not as fancy
@@ -28,25 +30,37 @@ class Konto
 {
     string name;
     double balance;
+    int kontonr;
     vector<transaction> log;
+    bool open;
 public:
-    void kontoeroeffnung(string name, double balance = 0)//method, because this one has to be a method according to the task | =0 is so that if no balance is passed, it will go to 0 by default
+    
+    Konto(string name="Unbekannt", double balance=0) : name(name), balance(balance), open(true)
     {
-        if (balance>-1) //no negative balance allowed
-        {
-            this->name = name;
-            this->balance = balance;
-            cout << "Konto von " << name << " wurde eroeffnet." << endl;
-            log.insert(log.end(), transaction(transaction::einzahlen, balance)); //constructing a new "transaction" and putting it into the vector
-        }
-        else
-        {
-            cout << "Kein negativer Betrag bei Kontoeroeffnung!" << endl;
-        }
+        kontonr = id_count;
+        id_count++;
+        transaction temp(transaction::einzahlen, balance);
+        log.push_back(temp);
+    }
+
+    Konto(const Konto& other)
+    {
+        this->name = other.name;
+        kontonr = id_count;
+        id_count++;
+        balance = 0;
+        open = true;
+        transaction temp(transaction::einzahlen, balance);
+        log.push_back(temp);
     }
 
     void einzahlen(double value)
     {
+        if (!open)
+        {
+            cout << "Konto wurde geschlossen - keine Transaktinen mehr möglich." << endl;
+            return;
+        }
         if (value<0)
         {
             value *= -1;
@@ -57,6 +71,11 @@ public:
 
     void abheben(double value)
     {
+        if (!open)
+        {
+            cout << "Konto wurde geschlossen - keine Transaktinen mehr möglich." << endl;
+            return;
+        }
         if (value<0)
         {
             value *= -1;
@@ -108,6 +127,47 @@ public:
             }
         }
     }
+
+    void schliessen()
+    {
+        if (balance==0)
+        {
+            open = false;
+        }
+        else
+        {
+            cout << "Kontostand muss 0 sein." << endl;
+        }
+    }
+
+    void ueberweisen(Konto& other, double value)
+    {
+        if (!open)
+        {
+            cout << "Konto wurde bereits geschlossen - keine Transaktionen mehr möglich." << endl;
+            return;
+        }
+        this->abheben(value);
+        other.einzahlen(value);
+        cout << "Ueberweisung von " << name << " im Wert von " << value << " an " << other.name << endl;;
+    }
+
+    double kontostand()
+    {
+        return balance;
+    }
+
+    void addentry(double value)
+    {
+        if (value < 0)
+        {
+            log.push_back(transaction(transaction::auszahlen, value));
+        }
+        else
+        {
+            log.push_back(transaction(transaction::einzahlen, value));
+        }
+    }
 };
 
 //As its own function, because this creates a new account --> can't use method of an object that doesn't exist yet
@@ -116,26 +176,16 @@ Konto readfromfile(const char* file_name) //open a new account from file
     ifstream file(file_name);
     if (file.is_open())
     {
-        Konto temp;
         string name; //temporary places for reading out of file
         getline(file, name);
         string balance;
         getline(file, balance);
-        temp.kontoeroeffnung(name, atof(balance.c_str())); //initializing the values with the values given from the file.
+        Konto temp(name, atof(balance.c_str()));
         string str;
         double val;
         while (getline(file, str))
         {
-            val = atof(str.c_str()); //converting string value to float
-            if (val < 0)
-            {
-                val *= -1;
-                temp.abheben(val);
-            }
-            else
-            {
-                temp.einzahlen(val);
-            }
+            temp.addentry(atof(str.c_str()));
         }
         file.close();
         return temp;
@@ -149,20 +199,22 @@ Konto readfromfile(const char* file_name) //open a new account from file
 
 int main()
 {
-    Konto alex;
-    Konto sabsi;
-    sabsi.kontoeroeffnung("Sabsi");
+    Konto alex("Alex",25);
+    Konto sabsi("Sabsi",10.5);
     sabsi.kontoauszug();
-    alex.kontoeroeffnung("Alexander", 50);
     alex.einzahlen(25.36);
     alex.einzahlen(20);
     alex.abheben(10);
     alex.kontoauszug();
     //Bonus:
     alex.writetofile("test.txt");
-    Konto harry = readfromfile("test.txt");
-    harry.kontoauszug();
-
+    Konto alexf = readfromfile("test.txt");
+    alexf.kontoauszug();
+    //Aufgabe 4:
+    Konto sabsi2(sabsi);
+    sabsi2.kontoauszug();
+    alex.ueberweisen(sabsi2, 10);
+    sabsi2.kontoauszug();
 }
 
 
