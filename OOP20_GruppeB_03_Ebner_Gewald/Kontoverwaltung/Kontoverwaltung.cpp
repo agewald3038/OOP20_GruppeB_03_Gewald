@@ -162,4 +162,7 @@ int main()
     alex.writetofile("test.txt");
     Konto harry = readfromfile("test.txt");
     harry.kontoauszug();
+
 }
+
+
