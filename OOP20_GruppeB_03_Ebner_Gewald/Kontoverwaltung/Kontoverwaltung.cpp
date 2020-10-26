@@ -216,5 +216,3 @@ int main()
     alex.ueberweisen(sabsi2, 10);
     sabsi2.kontoauszug();
 }
-
-
