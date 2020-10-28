@@ -10,11 +10,11 @@ Authors: Sabine Ebner & Alexander Gewald
 Aufgabennummer 3.1
 */
 
-int id_count = 0;
+
 
 struct transaction
 {
-    enum tr_enum { //would also work with bool, but it's not as fancy
+    enum tr_enum { 
         einzahlen,
         auszahlen
     };
@@ -28,17 +28,32 @@ struct transaction
 
 class Konto
 {
+    
     string name;
     double balance;
     int kontonr;
     vector<transaction> log;
     bool open;
+    static vector<int> free_id;
+    static int id_count;
+
+    void set_id() //Hilfsfunktion für die Konstruktoren, um die id festzulegen, damit es nicht in jedem Konstruktor einzeln steht.
+    {
+        if (free_id.empty())
+        {
+            kontonr = id_count;
+            id_count++;
+        }
+        else
+        {
+            kontonr = free_id.back();
+            free_id.pop_back();
+        }
+    }
 public:
-    
     Konto(string name="Unbekannt", double balance=0) : name(name), balance(balance), open(true)
     {
-        kontonr = id_count;
-        id_count++;
+        set_id();
         transaction temp(transaction::einzahlen, balance);
         log.push_back(temp);
     }
@@ -46,12 +61,17 @@ public:
     Konto(const Konto& other)
     {
         this->name = other.name;
-        kontonr = id_count;
-        id_count++;
+
+        set_id();
         balance = 0;
         open = true;
         transaction temp(transaction::einzahlen, balance);
         log.push_back(temp);
+    }
+
+    ~Konto()
+    {
+        free_id.push_back(kontonr); //die frei gewordene kontonr reingeben
     }
 
     void einzahlen(double value)
@@ -91,7 +111,7 @@ public:
 
     void kontoauszug() // prints all transactions to console, from newest to oldest
     {
-        cout << "Liste der Transaktionen von " << name <<":" << endl;
+        cout << "Liste der Transaktionen von " << name <<"(" << kontonr << "):" << endl;
         for (int i=(int)log.size() - 1; i>=0; i--)
         {
             if (log[i].tr_type==transaction::einzahlen)
@@ -132,7 +152,7 @@ public:
     {
         if (balance==0)
         {
-            open = false;
+            open = false; //keine überweisungen mehr möglich dadurch
         }
         else
         {
@@ -147,9 +167,17 @@ public:
             cout << "Konto wurde bereits geschlossen - keine Transaktionen mehr möglich." << endl;
             return;
         }
-        this->abheben(value);
-        other.einzahlen(value);
-        cout << "Ueberweisung von " << name << " im Wert von " << value << " an " << other.name << endl;;
+        if (this->balance<value)
+        {
+            cout << "Nicht genug Geld auf dem Konto" << endl;
+        }
+        else
+        {
+            this->abheben(value);
+            other.einzahlen(value);
+            cout << "Ueberweisung von " << name << " im Wert von " << value << " an " << other.name << endl;;
+        }
+
     }
 
     double kontostand()
@@ -157,9 +185,9 @@ public:
         return balance;
     }
 
-    void addentry(double value)
+    void addentry(double value) //Hilfsfunktion
     {
-        if (value < 0)
+        if (value < 0) //Unterscheidung, damit der richtige typ gegeben wird --> richtige ausgabe bei kontoauszug
         {
             log.push_back(transaction(transaction::auszahlen, value));
         }
@@ -182,7 +210,6 @@ Konto readfromfile(const char* file_name) //open a new account from file
         getline(file, balance);
         Konto temp(name, atof(balance.c_str()));
         string str;
-        double val;
         while (getline(file, str))
         {
             temp.addentry(atof(str.c_str()));
@@ -197,22 +224,30 @@ Konto readfromfile(const char* file_name) //open a new account from file
     }
 }
 
+
+int Konto::id_count=0; //to set start value and resolve external symbol
+vector<int> Konto::free_id;
+
 int main()
 {
-    Konto alex("Alex",25);
-    Konto sabsi("Sabsi",10.5);
-    sabsi.kontoauszug();
-    alex.einzahlen(25.36);
-    alex.einzahlen(20);
-    alex.abheben(10);
-    alex.kontoauszug();
-    //Bonus:
-    alex.writetofile("test.txt");
-    Konto alexf = readfromfile("test.txt");
-    alexf.kontoauszug();
-    //Aufgabe 4:
-    Konto sabsi2(sabsi);
-    sabsi2.kontoauszug();
-    alex.ueberweisen(sabsi2, 10);
-    sabsi2.kontoauszug();
+    { //scope, damit der Destruktor gecalled wird, um den free_id vector zu testen
+        Konto alex("Alex",25);
+        Konto sabsi("Sabsi",10.5);
+        sabsi.kontoauszug();
+        alex.einzahlen(25.36);
+        alex.einzahlen(20);
+        alex.abheben(10);
+        alex.kontoauszug();
+        //Bonus:
+        alex.writetofile("test.txt");
+        Konto alexf = readfromfile("test.txt");
+        alexf.kontoauszug();
+        //Aufgabe 4:
+        Konto sabsi2(sabsi);
+        sabsi2.kontoauszug();
+        alex.ueberweisen(sabsi2, 10);
+        sabsi2.kontoauszug();
+    } //Hier werdn die destruktor gecalled, startet mi sabsi2 und als letztes alex
+    Konto harry("Harry", 500.2); //demnach sollte ganz hinten im vector "0" sein
+    harry.kontoauszug(); //harry hat auch wirklich die Kontonr. 0 bekommen
 }
